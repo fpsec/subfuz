@@ -7,6 +7,7 @@ import (
     "log"
     "os"
     "os/exec"
+    "strings"
 )
 
 func main() {
@@ -45,14 +46,18 @@ func findSubdomains(domainsFile string) []string {
     subdomains := []string{}
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
-        domain := scanner.Text()
+        domain := strings.TrimSpace(scanner.Text())
+        if domain == "" {
+            continue // Skip empty lines
+        }
         fmt.Println("Running subfinder for domain:", domain)
 
         // Run subfinder command
         cmd := exec.Command("subfinder", "-d", domain)
-        output, err := cmd.Output()
+        output, err := cmd.CombinedOutput() // Capture both stdout and stderr
         if err != nil {
-            log.Fatal("Subfinder command failed: ", err)
+            log.Printf("Subfinder command failed for domain %s: %v\nOutput: %s\n", domain, err, string(output))
+            continue // Skip this domain and move to the next one
         }
 
         // Append output results to subdomains slice
